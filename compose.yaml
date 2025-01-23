@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: <StrongPassw0rd
+    ports:
+      - "1433:1433"
+    hostname: mssql
+    container_name: mssql
+    networks:
+      - custombridge
+    healthcheck:
+      test: ["CMD", "sqlcmd", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
+      interval: 10s
+      retries: 3
+
+#  spring-app:
+#    image: vs2
+#    container_name: vs12
+#    ports:
+#      - "8000:8080"
+#    depends_on:
+#      - mssql
+#    networks:
+#      - custombridge
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:sqlserver://mssql:1433;databaseName=VSDB;encrypt=true;trustServerCertificate=true;
+#      SPRING_DATASOURCE_USERNAME: sa
+#      SPRING_DATASOURCE_PASSWORD: <StrongPassw0rd
+
+networks:
+  custombridge:
+    driver: bridge
+
