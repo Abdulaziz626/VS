@@ -1,4 +1,4 @@
-package com.example.violations.system.dto;
+package com.example.violations.system.security;
 
 import lombok.Data;
 

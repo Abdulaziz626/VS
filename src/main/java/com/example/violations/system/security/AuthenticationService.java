@@ -1,7 +1,5 @@
 package com.example.violations.system.security;
 
-import com.example.violations.system.dto.RegisterUserDto;
-import com.example.violations.system.dto.LoginUserDto;
 import com.example.violations.system.entity.Role;
 import com.example.violations.system.entity.User;
 import com.example.violations.system.repository.UserRepository;

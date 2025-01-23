@@ -1,15 +1,28 @@
-//package com.example.violations.system.repository;
-//
-//import com.example.violations.system.entity.Violation;
-//import org.springframework.data.jpa.repository.JpaRepository;
-//import org.springframework.security.core.userdetails.User;
-//
-//import java.util.List;
-//
-//public interface ViolationRepository extends JpaRepository<Violation, Long> {
-//    List<Violation> findByInspector(User inspector);
-//    ; // Get violations by inspector ID
-//    List<Violation> findByRegionId(Long regionId);       // Get violations by region ID
-//    List<Violation> findByStatus(String status);         // Get violations by status
-//}
-//
+package com.example.violations.system.repository;
+
+import com.example.violations.system.entity.Violation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ViolationRepository extends JpaRepository<Violation, Integer> {
+
+    // Custom query methods if needed
+
+    // Find violations by a specific inspector ID
+    List<Violation> findByInspectorId(Long inspectorId);
+
+    // Find violations by plate number
+    List<Violation> findByPlateNumber(String plateNumber);
+
+    // Find violations by status
+    List<Violation> findByStatus(Violation.ViolationStatus status);
+
+    // Find violations by location
+    List<Violation> findByLocation(String location);
+
+    // Find violations by region
+    List<Violation> findByRegion(String region);
+}

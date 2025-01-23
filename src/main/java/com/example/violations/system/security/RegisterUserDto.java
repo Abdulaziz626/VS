@@ -1,4 +1,4 @@
-package com.example.violations.system.dto;
+package com.example.violations.system.security;
 
 import com.example.violations.system.entity.Role;
 import lombok.Data;
@@ -8,6 +8,6 @@ public class RegisterUserDto {
     private String fullName;
     private String email;
     private String password;
-    private Role role; // Use Role enum instead of String
-//    private String region;
+    private Role role;
+
 }

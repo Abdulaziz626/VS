@@ -12,9 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
 @Data
-@Setter
-@Getter
 @Table(name = "users")
 @Entity
 public class User implements UserDetails {
@@ -23,7 +22,6 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
     private Long id;
-
 
     @Column(nullable = false)
     private String fullName;
@@ -38,8 +36,6 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role; // Using the Role enum
 
-//    @Column(nullable = true)
-//    private String region;
 
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
@@ -49,10 +45,6 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private Date updatedAt;
 
-    //    @Override
-    //    public Collection<? extends GrantedAuthority> getAuthorities() {
-    //        return List.of(() -> role.name());
-    //    }
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();

@@ -1,7 +1,6 @@
-
 package com.example.violations.system.controller;
 
-import com.example.violations.system.dto.RegisterUserDto;
+import com.example.violations.system.security.RegisterUserDto;
 import com.example.violations.system.entity.User;
 import com.example.violations.system.repository.UserRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,7 +44,3 @@ public class AdminController {
         return userRepository.findAll();
     }
 }
-
-
-
-
