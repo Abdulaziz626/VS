@@ -11,6 +11,6 @@ public class ViolationRequestDto {
     private String location;
     private String plateNumber;
     private ViolationType violationType;
-    private Region region;
+//    private Region region;
     private String inspectorNotes;
 }

@@ -4,6 +4,8 @@ CREATE TABLE violations (
     violation_location NVARCHAR(255) NOT NULL,
     plate_number NVARCHAR(50) NOT NULL,
     violation_type NVARCHAR(100) NOT NULL,
+    inspector_id NVARCHAR(500) NOT NULL,
+    inspector_name NVARCHAR(500) NOT NULL,
     inspector_notes NVARCHAR(500),
     region NVARCHAR(100) NOT NULL,
     violation_date DATETIME2 DEFAULT GETDATE() NOT NULL,

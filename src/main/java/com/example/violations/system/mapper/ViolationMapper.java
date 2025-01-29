@@ -3,6 +3,7 @@ package com.example.violations.system.mapper;
 import com.example.violations.system.dto.ViolationRequestDto;
 import com.example.violations.system.dto.ViolationResponseDto;
 import com.example.violations.system.entity.Violation;
+import com.example.violations.system.entity.User;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,7 +15,7 @@ public class ViolationMapper {
         violation.setViolationLocation(dto.getLocation()); // Updated to match renamed field
         violation.setPlateNumber(dto.getPlateNumber());
         violation.setViolationType(dto.getViolationType());
-        violation.setRegion(dto.getRegion());
+//        violation.setRegion(dto.getRegion());
         violation.setInspectorNotes(dto.getInspectorNotes());
         return violation;
     }
@@ -28,6 +29,7 @@ public class ViolationMapper {
         dto.setViolationType(violation.getViolationType());
         dto.setRegion(violation.getRegion());
         dto.setInspectorNotes(violation.getInspectorNotes());
+//        dto.setInspector(violation.getInspector());
         dto.setViolationDate(violation.getViolationDate()); // Added field mapping
         dto.setStatus(violation.getStatus());
         return dto;

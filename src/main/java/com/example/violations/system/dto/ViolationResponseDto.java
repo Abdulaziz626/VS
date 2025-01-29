@@ -14,11 +14,13 @@ import static com.example.violations.system.entity.Violation.*;
 public class ViolationResponseDto {
     private Integer id;
     private String description;
-    private String violationLocation; // Updated to match entity field
+    private String violationLocation;
     private String plateNumber;
     private Violation.ViolationType violationType;
     private Region region;
+    private InspectorDto inspector;
+    private String inspectorName;
     private String inspectorNotes;
-    private Date violationDate; // Added field
+    private Date violationDate;
     private Violation.ViolationStatus status;
 }

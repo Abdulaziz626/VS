@@ -1,5 +1,6 @@
 package com.example.violations.system.entity;
 
+import com.example.violations.system.dto.InspectorDto;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -31,6 +32,13 @@ public class Violation {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Region region;
+
+    @ManyToOne
+    @JoinColumn(nullable = false, name = "inspector_id")
+    private User inspector;
+
+    @Column(name = "inspector_name")
+    private String inspectorName;
 
     @Column(name = "inspector_notes")
     private String inspectorNotes;
