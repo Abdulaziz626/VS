@@ -2,6 +2,7 @@ package com.example.violations.system.security;
 
 import com.example.violations.system.entity.Role;
 import com.example.violations.system.entity.User;
+import com.example.violations.system.entity.Region;
 import com.example.violations.system.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,6 +26,7 @@ public class AuthenticationService {
         }
 
         Role role;
+
         try {
             role = Role.valueOf(registerUserDto.getRole().toString().toUpperCase());
         } catch (IllegalArgumentException e) {
@@ -35,8 +37,8 @@ public class AuthenticationService {
         user.setFullName(registerUserDto.getFullName());
         user.setEmail(registerUserDto.getEmail());
         user.setPassword(passwordEncoder.encode(registerUserDto.getPassword()));
-        user.setRole(role); // Assign role directly from the enum
-
+        user.setRole(role);
+        user.setRegion(registerUserDto.getRegion());// Assign role directly from the enum
         return userRepository.save(user);
     }
 
