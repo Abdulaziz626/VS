@@ -18,8 +18,7 @@ public class ViolationResponseDto {
     private String plateNumber;
     private Violation.ViolationType violationType;
     private Region region;
-    private InspectorDto inspector;
-    private String inspectorName;
+    private InspectorDto inspector; // استخدم DTO بدلاً من كائن `User`
     private String inspectorNotes;
     private Date violationDate;
     private Violation.ViolationStatus status;

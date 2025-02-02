@@ -11,5 +11,4 @@ CREATE TABLE violations (
     violation_date DATETIME2 DEFAULT GETDATE() NOT NULL,
     status NVARCHAR(50)  NOT NULL,
 
-    CONSTRAINT chk_status CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))
 );

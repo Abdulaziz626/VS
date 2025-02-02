@@ -12,6 +12,7 @@ public interface ViolationRepository extends JpaRepository<Violation, Integer> {
 
 
     List<Violation> findByRegion(Region region);
+    long countByRegion(Region region);
 
     List<Violation> findByStatus(Violation.ViolationStatus status);
 }
