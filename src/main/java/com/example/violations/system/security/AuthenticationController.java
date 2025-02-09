@@ -17,7 +17,6 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signup")
-    @PreAuthorize("hasAuthority('ADMIN')") // Only admins can register users
     public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
         User registeredUser = authenticationService.signup(registerUserDto);
         return ResponseEntity.ok(registeredUser);

@@ -17,6 +17,21 @@ services:
       interval: 10s
       retries: 3
 
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    environment:
+      MINIO_ROOT_USER: Abdulaziz
+      MINIO_ROOT_PASSWORD: Azozminio2002
+    command: server /data --console-address ":9090"
+    volumes:
+      - ./data:/data
+
+
+
 #  spring-app:
 #    image: vs2
 #    container_name: vs12

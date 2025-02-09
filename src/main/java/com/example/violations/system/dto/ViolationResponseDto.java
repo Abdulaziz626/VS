@@ -22,4 +22,6 @@ public class ViolationResponseDto {
     private String inspectorNotes;
     private Date violationDate;
     private Violation.ViolationStatus status;
+    private String carPhotoUrl;
+
 }

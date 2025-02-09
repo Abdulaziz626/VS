@@ -1,55 +1,34 @@
 package com.example.violations.system.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<Object> handleGlobalUsernameNotFoundException(UsernameNotFoundException ex, HttpServletRequest request) {
-        var errorResponse = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                request.getRequestURI()
-        );
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-    }
 
-
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGlobalException(Exception ex, HttpServletRequest request) {
+    public void handleGlobalException(Exception ex, HttpServletRequest request, HttpServletResponse response) {
+        try {
+            LOGGER.error("Exception occurred during request processing: ", ex);
 
-ex.printStackTrace();
-        var errorResponse = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                ex.getMessage(),
-                request.getRequestURI()
-        );
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-
-    @Setter
-    @Getter
-    static class ErrorResponse {
-        // Getters and Setters ضروريّة للعمل
-        private int statusCode;
-        private String message;
-        private String path;
-
-        public ErrorResponse(int statusCode, String message, String path) {
-            this.statusCode = statusCode;
-            this.message = message;
-            this.path = path;
+            // تحقق من أن الاستجابة لم تُرسل مسبقًا.
+            if (!response.isCommitted()) {
+                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"An unexpected error occurred. Please try again later.\"}");
+                response.flushBuffer();
+            } else {
+                LOGGER.warn("Response was already committed, cannot write the error response.");
+            }
+        } catch (Exception writeException) {
+            LOGGER.error("Failed to write error response to the client: ", writeException);
         }
-
     }
 }

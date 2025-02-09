@@ -9,5 +9,4 @@ public class InspectorDto {
     private Long id;
     private String email;
     private String fullName;
-    private String region;
 }

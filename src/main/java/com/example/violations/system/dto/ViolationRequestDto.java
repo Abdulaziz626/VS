@@ -12,4 +12,5 @@ public class ViolationRequestDto {
     private String plateNumber;
     private ViolationType violationType;
     private String inspectorNotes;
+
 }

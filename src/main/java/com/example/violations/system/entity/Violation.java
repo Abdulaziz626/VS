@@ -1,6 +1,5 @@
 package com.example.violations.system.entity;
 
-import com.example.violations.system.dto.InspectorDto;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,6 +23,9 @@ public class Violation {
 
     @Column(nullable = false, name = "plate_number")
     private String plateNumber;
+
+    @Column(name = "car_photo_url")
+    private String carPhotoUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,8 +24,9 @@ public class ViolationService {
     private final ViolationRepository violationRepository;
     private final ViolationMapper violationMapper;
     private final AuthUtil authUtil;
+    private final MinioService minioService;
 
-    public Violation createViolation(ViolationRequestDto request) {
+    public Violation createViolation(ViolationRequestDto request, MultipartFile carPhoto) {
         log.info("Creating a new violation record");
         User authenticatedInspector = authUtil.getAuthenticatedUser();
         Violation violation = violationMapper.toEntity(request);
@@ -31,6 +34,12 @@ public class ViolationService {
         violation.setInspectorName(authenticatedInspector.getFullName());
         violation.setRegion(authenticatedInspector.getRegion());
         violation.setStatus(Violation.ViolationStatus.PENDING);
+
+        if (carPhoto != null && !carPhoto.isEmpty()) {
+            String photoUrl = minioService.uploadFile(carPhoto);
+            violation.setCarPhotoUrl(photoUrl);
+            log.info("Photo uploaded successfully: {}", photoUrl);
+        }
         return violationRepository.save(violation);
     }
 
