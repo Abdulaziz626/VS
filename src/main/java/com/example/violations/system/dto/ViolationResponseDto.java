@@ -18,6 +18,7 @@ public class ViolationResponseDto {
     private Date violationDate;
     private Violation.ViolationStatus status;
     private String carPhotoUrl;
+    private String presignedUrl;
 
 
 }

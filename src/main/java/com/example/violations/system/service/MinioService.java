@@ -63,19 +63,12 @@ public class MinioService {
                             .bucket(bucketName)
                             .object(fileName)
                             .build())) {
-                fileUrl = "https://" + bucketName + "/" + fileName;
+                fileUrl =  fileName;
             }
 
             violation.setCarPhotoUrl(fileUrl);
             violationRepository.save(violation);
 
-//            String fileUrl = minioClient.getPresignedObjectUrl(
-//                    GetPresignedObjectUrlArgs.builder()
-//                            .method(Method.GET)
-//                            .bucket(bucketName)
-//                            .object(fileName)
-//                            .build()
-//            );
             log.info("Minio File URL: {}", fileUrl);
             return fileUrl;
         } catch (Exception e) {
