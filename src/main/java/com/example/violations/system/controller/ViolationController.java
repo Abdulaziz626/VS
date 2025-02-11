@@ -4,14 +4,17 @@ import com.example.violations.system.dto.InspectorDto;
 import com.example.violations.system.dto.ViolationRequestDto;
 import com.example.violations.system.dto.ViolationResponseDto;
 import com.example.violations.system.entity.Region;
+import com.example.violations.system.entity.Role;
 import com.example.violations.system.entity.User;
 import com.example.violations.system.entity.Violation;
 import com.example.violations.system.repository.ViolationRepository;
+import com.example.violations.system.service.MinioService;
 import com.example.violations.system.service.ViolationPdfService;
 import com.example.violations.system.service.ViolationService;
 import com.example.violations.system.service.ViolationXlsxService;
 import com.example.violations.system.util.AuthUtil;
 
+import io.minio.errors.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -20,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,19 +47,29 @@ public class ViolationController {
     private static final Logger logger = LoggerFactory.getLogger(ViolationController.class);
     private static final String ARABIC_NUMERALS = "٠١٢٣٤٥٦٧٨٩";
     private static final String ENGLISH_NUMERALS = "0123456789";
+    private final MinioService minioService;
 
-
-
-    @PostMapping("/create")
-    @PreAuthorize("hasAuthority('INSPECTOR')")
-    public ResponseEntity<ViolationResponseDto> createViolation(
-            @RequestPart("data") ViolationRequestDto dto,
-            @RequestPart(value = "carPhoto", required = false) MultipartFile carPhoto) {
+@PostMapping("/create")
+@PreAuthorize("hasAuthority('INSPECTOR')")
+public ResponseEntity<ViolationResponseDto> createViolation(
+        @RequestPart("data") ViolationRequestDto dto,
+        @RequestPart(value = "carPhoto", required = false) MultipartFile carPhoto) {
+    try {
         Violation violation = violationService.createViolation(dto, carPhoto);
-        ViolationResponseDto response = violationService.mapToDto(violation);
-        return ResponseEntity.ok(response);
-    }
 
+        String presignedUrl = null;
+        if (carPhoto != null) {
+            presignedUrl = minioService.uploadFile(carPhoto, violation);
+        }
+
+        ViolationResponseDto response = violationService.mapToDto(violation);
+
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        logger.error("Error creating violation", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+    }
+}
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAuthority('OPERATOR')")
@@ -73,20 +88,6 @@ public class ViolationController {
         }
     }
 
-    @GetMapping("/violation_types")
-    @PreAuthorize("hasAnyAuthority('INSPECTOR','OPERATOR')")
-    public ResponseEntity<String> getAvailableViolationTypes() {
-        List<String> violationTypes = Arrays.stream(Violation.ViolationType.values())
-                .map(Enum::name)
-                .toList();
-
-        String response = "Violation types:\n" +
-                IntStream.range(0, violationTypes.size())
-                        .mapToObj(i -> (i + 1) + ". " + violationTypes.get(i))
-                        .collect(Collectors.joining("\n"));
-
-        return ResponseEntity.ok(response);
-    }
 
     @GetMapping("/export")
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -147,6 +148,7 @@ public class ViolationController {
 
         return ResponseEntity.ok(response);
     }
+
     private ViolationResponseDto toViolationDto(Violation violation) {
         ViolationResponseDto dto = new ViolationResponseDto();
         dto.setId(violation.getId());
@@ -158,8 +160,10 @@ public class ViolationController {
         dto.setViolationType(violation.getViolationType());
         dto.setRegion(violation.getRegion());
         dto.setInspector(toInspectorDto(violation.getInspector()));
+        dto.setCarPhotoUrl(violation.getCarPhotoUrl());
         return dto;
     }
+
     private InspectorDto toInspectorDto(User inspector) {
         if (inspector == null) {
             return null;
@@ -176,44 +180,13 @@ public class ViolationController {
     public ResponseEntity<?> getAllViolations(HttpServletRequest request) {
         User authenticatedUser = authUtil.getAuthenticatedUser();
         List<Violation> violations = violationRepository.findAll().stream()
-                .filter(violation -> isAuthorizedToView(authenticatedUser, violation)) // Filter by region
+                .filter(violation -> isAuthorizedToView(authenticatedUser, violation))
                 .toList();
-        String baseUrl = getBaseUrl(request);
+
         List<ViolationResponseDto> response = violations.stream()
-                .map(violation -> toViolationDto(violation, baseUrl)) // Include full photo URL in response
+                .map(this::toViolationDto)
                 .toList();
         return ResponseEntity.ok(response);
-    }
-    private ViolationResponseDto toViolationDto(Violation violation, String baseUrl) {
-        ViolationResponseDto dto = new ViolationResponseDto();
-        dto.setId(violation.getId());
-        dto.setDescription(violation.getDescription());
-        dto.setStatus(violation.getStatus());
-        dto.setViolationDate(violation.getViolationDate());
-        dto.setViolationLocation(violation.getViolationLocation());
-        dto.setPlateNumber(violation.getPlateNumber());
-        dto.setViolationType(violation.getViolationType());
-        dto.setRegion(violation.getRegion());
-        dto.setInspector(toInspectorDto(violation.getInspector()));
-        if (violation.getCarPhotoUrl() != null) {
-            dto.setCarPhotoUrl(baseUrl + "/uploads/" + violation.getCarPhotoUrl());
-        }
-
-        return dto;
-    }
-    private String getBaseUrl(HttpServletRequest request) {
-        String port = toEnglishNumerals(String.valueOf(request.getServerPort()));
-        return String.format("%s://%s:%s", request.getScheme(), request.getServerName(), port);
-    }
-
-    private String toEnglishNumerals(String input) {
-        return input.chars()
-                .mapToObj(c -> {
-                    int index = ARABIC_NUMERALS.indexOf((char) c);
-                    return index >= 0 ? ENGLISH_NUMERALS.charAt(index) : (char) c;
-                })
-                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                .toString();
     }
 
     private boolean isAuthorizedToView(User authenticatedUser, Violation violation) {
@@ -224,6 +197,51 @@ public class ViolationController {
             return false;
         }
         return true;
+    }
+
+    @GetMapping("/violation_types")
+    @PreAuthorize("hasAnyAuthority('INSPECTOR','OPERATOR')")
+    public ResponseEntity<String> getAllViolationTypes() {
+        List<String> violationTypes = Arrays.stream(Violation.ViolationType.values())
+                .map(Enum::name)
+                .toList();
+
+        String response = "The Violation types:\n" +
+                IntStream.range(0, violationTypes.size())
+                        .mapToObj(i -> (i + 1) + ". " + violationTypes.get(i))
+                        .collect(Collectors.joining("\n"));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/Regions")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<String> getAllRegions() {
+        List<String> Regions = Arrays.stream(Region.values())
+                .map(Enum::name)
+                .toList();
+
+        String response = "The Regions:\n" +
+                IntStream.range(0, Regions.size())
+                        .mapToObj(i -> (i + 1) + ". " + Regions.get(i))
+                        .collect(Collectors.joining("\n"));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/Roles")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<String> getAllRoles() {
+        List<String> Roles = Arrays.stream(Role.values())
+                .map(Enum::name)
+                .toList();
+
+        String response = "The Roles:\n" +
+                IntStream.range(0, Roles.size())
+                        .mapToObj(i -> (i + 1) + ". " + Roles.get(i))
+                        .collect(Collectors.joining("\n"));
+
+        return ResponseEntity.ok(response);
     }
 
 }

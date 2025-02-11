@@ -1,18 +1,15 @@
 package com.example.violations.system.service;
 
-import com.example.violations.system.dto.InspectorDto;
 import com.example.violations.system.dto.ViolationRequestDto;
 import com.example.violations.system.dto.ViolationResponseDto;
 import com.example.violations.system.entity.User;
 import com.example.violations.system.entity.Violation;
-//import com.example.violations.system.mapper.InspectorMapper;
 import com.example.violations.system.mapper.ViolationMapper;
-import com.example.violations.system.repository.UserRepository;
 import com.example.violations.system.repository.ViolationRepository;
 import com.example.violations.system.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.userdetails.UserDetailsService;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,7 +33,7 @@ public class ViolationService {
         violation.setStatus(Violation.ViolationStatus.PENDING);
 
         if (carPhoto != null && !carPhoto.isEmpty()) {
-            String photoUrl = minioService.uploadFile(carPhoto);
+            String photoUrl = minioService.uploadFile(carPhoto, violation);
             violation.setCarPhotoUrl(photoUrl);
             log.info("Photo uploaded successfully: {}", photoUrl);
         }
