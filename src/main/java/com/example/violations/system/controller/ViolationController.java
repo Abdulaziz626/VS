@@ -49,6 +49,7 @@ public class ViolationController {
     private static final String ENGLISH_NUMERALS = "0123456789";
     private final MinioService minioService;
 
+
 @PostMapping("/create")
 @PreAuthorize("hasAuthority('INSPECTOR')")
 public ResponseEntity<ViolationResponseDto> createViolation(
@@ -57,9 +58,9 @@ public ResponseEntity<ViolationResponseDto> createViolation(
     try {
         Violation violation = violationService.createViolation(dto, carPhoto);
 
-        String presignedUrl = null;
+        String URL = null;
         if (carPhoto != null) {
-            presignedUrl = minioService.uploadFile(carPhoto, violation);
+            URL = minioService.uploadFile(carPhoto, violation);
         }
 
         ViolationResponseDto response = violationService.mapToDto(violation);
@@ -176,7 +177,7 @@ public ResponseEntity<ViolationResponseDto> createViolation(
     }
 
     @GetMapping("/view")
-    @PreAuthorize("hasAnyAuthority('INSPECTOR','OPERATOR')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','INSPECTOR','OPERATOR')")
     public ResponseEntity<?> getAllViolations(HttpServletRequest request) {
         User authenticatedUser = authUtil.getAuthenticatedUser();
         List<Violation> violations = violationRepository.findAll().stream()
@@ -242,6 +243,17 @@ public ResponseEntity<ViolationResponseDto> createViolation(
                         .collect(Collectors.joining("\n"));
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/presigned-url")
+    public ResponseEntity<String> getPresignedUrl(@RequestParam String objectName) {
+        try {
+
+            String presignedUrl = minioService.createPresignedUrl(objectName);
+            return ResponseEntity.ok(presignedUrl);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error generating presigned URL: " + e.getMessage());
+        }
     }
 
 }
