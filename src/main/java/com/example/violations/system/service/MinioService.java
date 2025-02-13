@@ -66,7 +66,7 @@ public class MinioService {
                 fileUrl =  fileName;
             }
 
-            violation.setCarPhotoUrl(fileUrl);
+            violation.setCarImage(fileUrl);
             violationRepository.save(violation);
 
             log.info("Minio File URL: {}", fileUrl);

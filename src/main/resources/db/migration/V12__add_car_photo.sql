@@ -1,2 +1,2 @@
 ALTER TABLE violations
-    ADD car_photo_url NVARCHAR(2083) DEFAULT NULL;
+    ADD car_image NVARCHAR(2083) DEFAULT NULL;

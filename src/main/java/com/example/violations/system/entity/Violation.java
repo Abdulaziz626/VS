@@ -24,8 +24,8 @@ public class Violation {
     @Column(nullable = false, name = "plate_number")
     private String plateNumber;
 
-    @Column(name = "car_photo_url")
-    private String carPhotoUrl;
+    @Column(name = "car_image")
+    private String carImage;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

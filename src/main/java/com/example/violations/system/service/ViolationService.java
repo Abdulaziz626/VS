@@ -34,7 +34,7 @@ public class ViolationService {
 
         if (carPhoto != null && !carPhoto.isEmpty()) {
             String photoUrl = minioService.uploadFile(carPhoto, violation);
-            violation.setCarPhotoUrl(photoUrl);
+            violation.setCarImage(photoUrl);
             log.info("Photo uploaded successfully: {}", photoUrl);
         }
         return violationRepository.save(violation);

@@ -155,7 +155,7 @@ public ResponseEntity<ViolationResponseDto> createViolation(
         dto.setViolationType(violation.getViolationType());
         dto.setRegion(violation.getRegion());
         dto.setInspector(toInspectorDto(violation.getInspector()));
-        dto.setCarPhotoUrl(violation.getCarPhotoUrl());
+        dto.setCarImage(violation.getCarImage());
         return dto;
     }
 

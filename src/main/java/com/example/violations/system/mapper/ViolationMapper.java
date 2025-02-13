@@ -30,7 +30,7 @@ public class ViolationMapper {
             dto.setInspectorNotes(violation.getInspectorNotes());
             dto.setViolationDate(violation.getViolationDate());
             dto.setStatus(violation.getStatus());
-            dto.setCarPhotoUrl(violation.getCarPhotoUrl());
+            dto.setCarImage(violation.getCarImage());
 
             InspectorDto inspectorDto = new InspectorDto();
             inspectorDto.setId(violation.getInspector().getId());
