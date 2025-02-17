@@ -25,17 +25,17 @@ public class ViolationPdfService {
     public void exportViolationsToPdf(HttpServletResponse response) {
         List<Violation> violations = violationRepository.findAll();
 
-        // بناء البيانات المطلوبة للجدول والإحصائيات
+
         String tableRows = buildTableRows(violations);
         String statisticsTable = buildStatistics(violations);
 
-        // قالب الـ HTML مع تضمين الجدول والإحصائيات
+
         String htmlTemplate = getHtmlTemplate(tableRows, statisticsTable);
 
         try (ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
             HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlTemplate.getBytes(StandardCharsets.UTF_8)), pdfOutputStream);
 
-            // إعداد الاستجابة
+
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "attachment; filename=violations_report.pdf");
             response.getOutputStream().write(pdfOutputStream.toByteArray());
@@ -64,7 +64,6 @@ public class ViolationPdfService {
     private String buildStatistics(List<Violation> violations) {
         StringBuilder statsBuilder = new StringBuilder();
 
-        // إحصائيات حسب نوع الانتهاك
         statsBuilder.append("<h2>Statistics by Violation Types:</h2>");
         statsBuilder.append("<table style='margin-left: 20px;'>");
         statsBuilder.append("<tr><th>Violation Type</th><th>Count</th></tr>");
@@ -80,7 +79,7 @@ public class ViolationPdfService {
         }
         statsBuilder.append("</table>");
 
-        // إحصائيات حسب المنطقة
+
         statsBuilder.append("<h2>Statistics by Region:</h2>");
         statsBuilder.append("<table style='margin-left: 20px;'>");
         statsBuilder.append("<tr><th>Region</th><th>Count</th></tr>");

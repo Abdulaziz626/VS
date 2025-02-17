@@ -1,9 +1,11 @@
 package com.example.violations.system.dto;
 
+import com.example.violations.system.entity.CarImage;
 import com.example.violations.system.entity.Region;
 import com.example.violations.system.entity.Violation;
 import lombok.Data;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class ViolationResponseDto {
@@ -17,8 +19,8 @@ public class ViolationResponseDto {
     private String inspectorNotes;
     private Date violationDate;
     private Violation.ViolationStatus status;
-    private String carImage;
-    private String presignedUrl;
+    private List<String> carImages;
+    private List<String> presignedUrl;
 
 
 }

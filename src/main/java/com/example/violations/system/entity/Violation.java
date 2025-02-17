@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @Entity
@@ -24,8 +25,9 @@ public class Violation {
     @Column(nullable = false, name = "plate_number")
     private String plateNumber;
 
-    @Column(name = "car_image")
-    private String carImage;
+    @OneToMany(cascade = CascadeType.ALL,
+    mappedBy = "violation", orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<CarImage> carImage;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

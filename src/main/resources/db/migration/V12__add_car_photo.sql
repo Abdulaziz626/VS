@@ -1,2 +1,0 @@
-ALTER TABLE violations
-    ADD car_image NVARCHAR(2083) DEFAULT NULL;

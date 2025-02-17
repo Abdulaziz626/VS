@@ -27,7 +27,11 @@ public interface ViolationRepository extends JpaRepository<Violation, Integer> {
     @Query("SELECT v FROM Violation v")
     Stream<Violation> streamAll();
 
-    @Query("SELECT v FROM Violation v WHERE v.region = :region AND v.status = :status")
+    @Query("SELECT v FROM Violation v LEFT JOIN FETCH v.carImage WHERE v.id = :id")
+    Optional<Violation> findByIdWithCarImages(@Param("id") Integer id);
+
+
+    @Query("SELECT v FROM Violation v LEFT JOIN FETCH v.carImage WHERE v.region = :region AND v.status = :status")
     List<Violation> findByRegionAndStatus(@Param("region") Region region, @Param("status") Violation.ViolationStatus status);
 
 

@@ -3,10 +3,7 @@ package com.example.violations.system.controller;
 import com.example.violations.system.dto.InspectorDto;
 import com.example.violations.system.dto.ViolationRequestDto;
 import com.example.violations.system.dto.ViolationResponseDto;
-import com.example.violations.system.entity.Region;
-import com.example.violations.system.entity.Role;
-import com.example.violations.system.entity.User;
-import com.example.violations.system.entity.Violation;
+import com.example.violations.system.entity.*;
 import com.example.violations.system.repository.ViolationRepository;
 import com.example.violations.system.service.MinioService;
 import com.example.violations.system.service.ViolationPdfService;
@@ -15,6 +12,7 @@ import com.example.violations.system.service.ViolationXlsxService;
 import com.example.violations.system.util.AuthUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,9 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.slf4j.Logger;
@@ -44,26 +40,79 @@ public class ViolationController {
     private static final Logger logger = LoggerFactory.getLogger(ViolationController.class);
     private final MinioService minioService;
 
-@PostMapping("/create")
-@PreAuthorize("hasAuthority('INSPECTOR')")
-public ResponseEntity<ViolationResponseDto> createViolation(
-        @RequestPart("data") ViolationRequestDto dto,
-        @RequestPart(value = "carPhoto", required = false) MultipartFile carPhoto) {
-    try {
-        Violation violation = violationService.createViolation(dto, carPhoto);
+    @PostMapping("/create")
+    @PreAuthorize("hasAuthority('INSPECTOR')")
+    public ResponseEntity<ViolationResponseDto> createViolation(
+            @RequestPart("data") ViolationRequestDto dto,
+            @RequestPart(value = "carPhotos", required = false) List<MultipartFile> carPhotos) {
+        try {
+            if (carPhotos == null || carPhotos.isEmpty()) {
+                logger.error("No files received!");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+            logger.info("Number of files received: {}", carPhotos.size());
 
-        String URL = null;
-        if (carPhoto != null) {
-            URL = minioService.uploadFile(carPhoto, violation);
+            Violation violation = violationService.createViolation(dto, carPhotos);
+
+            ViolationResponseDto response = violationService.mapToDto(violation);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error creating violation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-        ViolationResponseDto response = violationService.mapToDto(violation);
+    }
+
+    @GetMapping("/view")
+    @PreAuthorize("hasAnyAuthority('ADMIN','INSPECTOR','OPERATOR')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getAllViolations(HttpServletRequest request) {
+        User authenticatedUser = authUtil.getAuthenticatedUser();
+
+        List<Violation> violations = violationRepository.streamAll()
+                .filter(violation -> isAuthorizedToView(authenticatedUser, violation))
+                .toList();
+
+        List<ViolationResponseDto> response = violations.stream()
+                .map(this::toViolationDto)
+                .toList();
 
         return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        logger.error("Error creating violation", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
     }
-}
+
+    @GetMapping("/view/filter")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Transactional(readOnly = true) // Added @Transactional to keep the transaction open
+    public ResponseEntity<?> getViolationsWithFilter(
+            @RequestParam(required = false) Violation.ViolationStatus status,
+            @RequestParam(required = false) String regionName) {
+        if (status == null && regionName == null) {
+            return ResponseEntity.badRequest()
+                    .body("Please provide at least one filter: 'status' or 'regionName'.");
+        }
+        List<Violation> violations;
+        try {
+            if (regionName != null) {
+                Region region = Region.valueOf(regionName);
+                if (status != null) {
+                    violations = violationRepository.findByRegionAndStatus(region, status);
+                } else {
+                    violations = violationRepository.findByRegion(region);
+                }
+            } else {
+                violations = violationRepository.findByStatus(status);
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid region name provided.");
+        }
+
+        if (violations.isEmpty()) {
+            return ResponseEntity.ok("No violations found for the given filters.");
+        }
+        List<ViolationResponseDto> response = violations.stream()
+                .map(this::toViolationDto)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAuthority('OPERATOR')")
@@ -109,53 +158,32 @@ public ResponseEntity<ViolationResponseDto> createViolation(
         violationPdfService.exportViolationsToPdf(response);
     }
 
-    @GetMapping("/view/filter")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<?> getViolationsWithFilter(
-            @RequestParam(required = false) Violation.ViolationStatus status,
-            @RequestParam(required = false) String regionName) {
-        if (status == null && regionName == null) {
-            return ResponseEntity.badRequest().body("Please provide at least one filter: 'status' or 'regionName'.");
-        }
-        List<Violation> violations;
-        try {
-            if (regionName != null) {
-                Region region = Region.valueOf(regionName);
-                if (status != null) {
-                    violations = violationRepository.findByRegionAndStatus(region, status);
-                } else {
-                    violations = violationRepository.findByRegion(region);
-                }
-            } else {
-                violations = violationRepository.findByStatus(status);
-            }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Invalid region name provided.");
-        }
-
-        if (violations.isEmpty()) {
-            return ResponseEntity.ok("No violations found for the given filters.");
-        }
-        List<ViolationResponseDto> response = violations.stream()
-                .map(this::toViolationDto)
-                .toList();
-
-        return ResponseEntity.ok(response);
-    }
-
     private ViolationResponseDto toViolationDto(Violation violation) {
         ViolationResponseDto dto = new ViolationResponseDto();
         dto.setId(violation.getId());
         dto.setDescription(violation.getDescription());
-        dto.setStatus(violation.getStatus());
-        dto.setViolationDate(violation.getViolationDate());
-        dto.setInspectorNotes(violation.getInspectorNotes());
         dto.setViolationLocation(violation.getViolationLocation());
         dto.setPlateNumber(violation.getPlateNumber());
         dto.setViolationType(violation.getViolationType());
         dto.setRegion(violation.getRegion());
         dto.setInspector(toInspectorDto(violation.getInspector()));
-        dto.setCarImage(violation.getCarImage());
+        dto.setInspectorNotes(violation.getInspectorNotes());
+        dto.setViolationDate(violation.getViolationDate());
+        dto.setStatus(violation.getStatus());
+
+        List<String> carImages = violation.getCarImage().stream()
+                .map(CarImage::getImagePath)
+                .filter(Objects::nonNull)
+                .toList();
+        dto.setCarImages(carImages);
+
+        List<String> presignedUrls = violation.getCarImage().stream()
+                .map(CarImage::getImagePath)
+                .map(minioService::createPresignedUrl)
+                .filter(Objects::nonNull)
+                .toList();
+
+        dto.setPresignedUrl(presignedUrls);
         return dto;
     }
 
@@ -168,20 +196,6 @@ public ResponseEntity<ViolationResponseDto> createViolation(
         dto.setEmail(inspector.getEmail());
         dto.setFullName(inspector.getFullName());
         return dto;
-    }
-
-    @GetMapping("/view")
-    @PreAuthorize("hasAnyAuthority('ADMIN','INSPECTOR','OPERATOR')")
-    public ResponseEntity<?> getAllViolations(HttpServletRequest request) {
-        User authenticatedUser = authUtil.getAuthenticatedUser();
-        List<Violation> violations = violationRepository.findAll().stream()
-                .filter(violation -> isAuthorizedToView(authenticatedUser, violation))
-                .toList();
-
-        List<ViolationResponseDto> response = violations.stream()
-                .map(this::toViolationDto)
-                .toList();
-        return ResponseEntity.ok(response);
     }
 
     private boolean isAuthorizedToView(User authenticatedUser, Violation violation) {
@@ -243,37 +257,40 @@ public ResponseEntity<ViolationResponseDto> createViolation(
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/presigned_url")
-    @PreAuthorize("hasAnyAuthority('ADMIN','INSPECTOR','OPERATOR')")
-    public ResponseEntity<?> getPresignedUrl(@RequestParam String violationId) {
-
-            User authenticatedUser = authUtil.getAuthenticatedUser();
-            Optional<Violation> violationOptional = violationRepository.findById(Integer.parseInt(violationId));
-            if (violationOptional.isEmpty() ||
-                    !isAuthorizedToView(authenticatedUser, violationOptional.get())) {
-                return ResponseEntity.status(403).body("Unauthorized to view this violation");
-            }
-            String presignedUrl = minioService.createPresignedUrl("Violation_" + violationId);
-            return ResponseEntity.ok(presignedUrl);
-    }
-
     @GetMapping("/view_by_ID")
     @PreAuthorize("hasAnyAuthority('ADMIN','INSPECTOR','OPERATOR')")
     public ResponseEntity<?> viewById(@RequestParam String objectName, HttpServletRequest request) {
+        try {
+            User authenticatedUser = authUtil.getAuthenticatedUser();
+            Optional<Violation> violationOptional = violationRepository.findByIdWithCarImages(Integer.parseInt(objectName));
+            if (violationOptional.isEmpty() || !isAuthorizedToView(authenticatedUser, violationOptional.get())) {
+                return ResponseEntity.status(403).body("Unauthorized to view this violation");
+            }
+            Violation violation = violationOptional.get();
+            ViolationResponseDto responseDto = toViolationDto(violation);
+            List<String> presignedUrls = violation.getCarImage().stream()
+                    .map(CarImage::getImagePath)
+                    .map(imageUrl -> {
+                        try {
+                            return minioService.createPresignedUrl(imageUrl);
+                        } catch (Exception e) {
+                            logger.error("Failed to generate presigned URL for image: {}", imageUrl, e);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
 
-        User authenticatedUser = authUtil.getAuthenticatedUser();
-        Optional<Violation> violationOptional = violationRepository.findById(Integer.parseInt(objectName));
+            responseDto.setPresignedUrl(presignedUrls);
 
-        if (violationOptional.isEmpty() ||
-                !isAuthorizedToView(authenticatedUser, violationOptional.get())) {
-            return ResponseEntity.status(403).body("Unauthorized to view this violation");
+            return ResponseEntity.ok(responseDto);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid objectName ID provided: {}", objectName, e);
+            return ResponseEntity.badRequest().body("Invalid ID format.");
+        } catch (Exception e) {
+            logger.error("An error occurred while retrieving violation details.", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
-        Violation violation = violationOptional.get();
-        ViolationResponseDto responseDto = toViolationDto(violation);
-        String presignedUrl = minioService.createPresignedUrl("Violation_" + violation.getId());
-
-        responseDto.setPresignedUrl(presignedUrl);
-        return ResponseEntity.ok(responseDto);
     }
 
 
