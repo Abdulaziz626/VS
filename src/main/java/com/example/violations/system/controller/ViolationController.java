@@ -5,10 +5,7 @@ import com.example.violations.system.dto.ViolationRequestDto;
 import com.example.violations.system.dto.ViolationResponseDto;
 import com.example.violations.system.entity.*;
 import com.example.violations.system.repository.ViolationRepository;
-import com.example.violations.system.service.MinioService;
-import com.example.violations.system.service.ViolationPdfService;
-import com.example.violations.system.service.ViolationService;
-import com.example.violations.system.service.ViolationXlsxService;
+import com.example.violations.system.service.*;
 import com.example.violations.system.util.AuthUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +36,7 @@ public class ViolationController {
     private static final String REPORT_FILE_NAME = "violations_report.pdf";
     private static final Logger logger = LoggerFactory.getLogger(ViolationController.class);
     private final MinioService minioService;
+    private final CarService carService;
 
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('INSPECTOR')")
@@ -292,6 +290,15 @@ public class ViolationController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
     }
+
+    @GetMapping("/car-info/{plateNumber}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','INSPECTOR','OPERATOR')")
+    public ResponseEntity<Object> getCarInfoByPlate(@PathVariable String plateNumber) {
+        Object carInfo = carService.getCarInfoByPlateAsObject(plateNumber);
+        return ResponseEntity.ok(carInfo);
+    }
+
+
 
 
 }
