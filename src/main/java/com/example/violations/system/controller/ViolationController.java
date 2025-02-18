@@ -49,9 +49,7 @@ public class ViolationController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
             logger.info("Number of files received: {}", carPhotos.size());
-
             Violation violation = violationService.createViolation(dto, carPhotos);
-
             ViolationResponseDto response = violationService.mapToDto(violation);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -69,11 +67,9 @@ public class ViolationController {
         List<Violation> violations = violationRepository.streamAll()
                 .filter(violation -> isAuthorizedToView(authenticatedUser, violation))
                 .toList();
-
         List<ViolationResponseDto> response = violations.stream()
                 .map(this::toViolationDto)
                 .toList();
-
         return ResponseEntity.ok(response);
     }
 
@@ -130,7 +126,7 @@ public class ViolationController {
     }
 
 
-    @GetMapping("/export")
+    @GetMapping("/export/excel")
     @PreAuthorize("hasAuthority('ADMIN')")
     public void exportViolationsToExcel(HttpServletResponse response) {
         response.setContentType("application/vnd.ms-excel");

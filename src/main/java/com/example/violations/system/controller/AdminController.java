@@ -24,7 +24,7 @@ public class AdminController {
     }
 
     @PostMapping("/add-user")
-    @PreAuthorize("hasAuthority('ADMIN')") // Ensure only admins can add users
+    @PreAuthorize("hasAuthority('ADMIN')")
     public String addUser(@RequestBody RegisterUserDto registerUserDto) {
         if (userRepository.findByEmail(registerUserDto.getEmail()).isPresent()) {
             return "Email already exists.";
@@ -43,9 +43,9 @@ public class AdminController {
 
 
     @GetMapping("/users")
-    @PreAuthorize("hasAuthority('ADMIN')") // Ensure only admins can view all users
+    @PreAuthorize("hasAuthority('ADMIN')")
     public List<User> getAllUsers() {
-        String username = getAuthenticatedUsername(); // Extracted logic to helper method
+        String username = getAuthenticatedUsername();
         return userRepository.findAll();
     }
 
