@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -33,6 +34,10 @@ public interface ViolationRepository extends JpaRepository<Violation, Integer> {
 
     @Query("SELECT v FROM Violation v LEFT JOIN FETCH v.carImage WHERE v.region = :region AND v.status = :status")
     List<Violation> findByRegionAndStatus(@Param("region") Region region, @Param("status") Violation.ViolationStatus status);
+
+
+    void deleteByExpiredAtBefore(LocalDateTime now);
+
 
 
 

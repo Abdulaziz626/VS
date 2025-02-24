@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -62,4 +63,21 @@ public class Violation {
     public enum ViolationType {
         SPEEDING, USING_PHONE, RED_LIGHT_CROSSING, WRONG_PARKING
     }
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "expired_at", nullable = false)
+    private LocalDateTime expiredAt;
+
+    public Violation() {
+        this.expiredAt = this.createdAt.plusDays(30);
+    }
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(expiredAt);
+    }
+
+
+
 }
